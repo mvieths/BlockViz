@@ -1,0 +1,52 @@
+BlockViz Plugin
+
+This plugin was designed to interpret block data created by Jeremy Bellay based on data described in the paper 'The Genetic Landscape of the Cell' (Michael Costanzo, Science 22 Jan. 2010, Vol 327 no 5964 pp. 425-431).  The supplementary data for that paper can be found at:
+
+http://drygin.ccbr.utoronto.ca/~costanzo2009/
+
+Provided classes:
+MDPlugin
+Block
+MDPanel
+
+MDPlugin is the main class for the program.  It registers itself with Cytoscape when the JAR file is loaded.
+init()			Sets up the Swing panels and sets the default layout.
+actionPerformed()	Fires whenever an event is processed by Swing.  This is where the other methods get called.
+doSearch()		Does some sanity checking before performing the search.  It ensures that blocks and a network are loaded and generates appropriate errors.
+searchGenes(genes[])	Searches the query genes portion of the blocks file, create Block objects for each line that matches the search and then construct a network for each block.
+constructNetworkFromBlock()	Performs the actual construction of the networks by pulling edges and nodes out of the overall network created when you load a networks file
+loadBlocks() 		Loads the blocks file selected in the GUI
+loadNetwork()		Loads the network file selected in the GUI and constructs a network from it.  Only nodes and edges contained in this overall network will be eligible to appear in the created block networks.
+
+Block is a helper class into which the query and target genes will be loaded.
+setQuery(genes[])	Sets the query genes in this block
+setTarget(genes[])	Sets the target genes in this block
+MDPanel is a Swing panel used to set up the GUI.
+
+To develop in Eclipse, you’ll want to import the mdplugin.epf file into Eclipse.  This should get you the appropriate settings, but you’ll need to change the file paths on your project preferences so they point to your copy of the cytoscape JAR files.
+
+To export a JAR file, select the bin\aibn directory and all its containing files, right-click and select ‘export’.  Under Java there will be an option for JAR file.  Select that and click next.  Check the boxes marked ‘Export all output folders for checked projects’, ‘compress the contents of the JAR file’, and ‘Add directory entries’.  Click ‘Finish’ and copy the JAR file created into the plugins directory in Cytoscape.
+
+Drop it into <your cytoscape directory>/plugins.  An item called 'BlockViz' should appear in the Plugins dropdown in Cytoscape.  If you load it, you'll get a new tab called 'MD' in the control panel.  On that tab, there are 3 options:
+Load Blocks
+Load Network
+Query
+
+The load buttons will pop up a file dialog box.
+Load Blocks will take one of your block files (Neg_Clusters05.txt)
+Load Network will load a file in .sif format.  Due to memory limits, I stuck to the top and bottom 50k interactions in the Costanzo data.  I formatted it as follows (I'm assuming you're using Linux or at least Cygwin):
+
+awk '{print $1" "$3" "$5" "$7}' sgadata_costanzo2009_rawdata_updated.txt > rawdata_orfs_eps_p.txt
+
+Run the attached filter.pl script, which will filter out anything with a p-value greater than 0.05 or an interaction score of NaN and create a file called filtered.sif.
+
+Sort the file:
+sort -k 2 filtered.sif > sorted.sif
+
+Get the first and last 50k interactions:
+head -50000 sorted.sif > positive50k.sif
+tail -50000 sorted.sif > negative50k.sif
+
+Once the Blocks and Network files are loaded, enter the genes you'd like to query, separated by commas or spaces, and click 'Query'.  It will search through the query genes from the blocks file you loaded, generate Cytoscape networks for each block, then create a view for each automatically.  This can take a while depending on your search.  It will tell you how many blocks it found and label each network with the query genes and a unique number (e.g. 'Blocks for YBR098W YDR004W (0)').
+
+It will default to the Cytoscape-provided Hierarchical layout.  The yFiles Hierarchical layout looks better, in my opinion, but apparently due to licensing restrictions the Cytoscape developers aren't allowed to expose those layouts to their API so you'll need to change that manually.
